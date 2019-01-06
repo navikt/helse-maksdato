@@ -7,11 +7,6 @@ import java.time.*
 
 object CalendarArithmeticTest: Spek({
 
-   val weekdayTestcases = mapOf(
-      Pair(LocalDate.of(2015, 11, 26), 2) to LocalDate.of(2015, 11, 30),
-      Pair(LocalDate.of(2019, 1, 4), 3) to LocalDate.of(2019, 1, 9)
-   )
-
    describe("general date arithmetic") {
 
       given("a specific day") {
@@ -35,9 +30,14 @@ object CalendarArithmeticTest: Spek({
 
          on ("any day of the week") {
             it("is calculates a date x amount of weekdays into the future") {
-               weekdayTestcases.forEach {
+               val testcases = mapOf(
+                  Pair(LocalDate.of(2015, 11, 26), 2) to LocalDate.of(2015, 11, 30),
+                  Pair(LocalDate.of(2019, 1, 4), 3) to LocalDate.of(2019, 1, 9)
+               )
+
+               testcases.forEach {
                   val (start, nrOfWeekdays) = it.key
-                  nWeekDaysFrom(nrOfWeekdays, start) `should equal` it.value
+                  nWeekdaysFrom(nrOfWeekdays, start) `should equal` it.value
                }
             }
          }

@@ -3,17 +3,12 @@ package no.nav.helse
 import java.time.*
 import java.time.DayOfWeek.*
 
-fun nWeekDaysFrom(n: Int, from: LocalDate): LocalDate {
-   var temp = from
-   for (i in (0 until n)) {
-      temp = nextWeekDay(temp)
-   }
-   return temp
-}
+tailrec fun nWeekdaysFrom(n: Int, from: LocalDate): LocalDate =
+   if (n == 0) from else nWeekdaysFrom(n - 1, nextWeekday(from))
 
-fun nextWeekDay(after: LocalDate): LocalDate {
-   val tomorrow = after.plusDays(1)
-   return if (isWeekend(tomorrow)) nextWeekDay(tomorrow) else tomorrow
+tailrec fun nextWeekday(after: LocalDate): LocalDate {
+   val nextDay = after.plusDays(1)
+   return if (isWeekend(nextDay)) nextWeekday(nextDay) else nextDay
 }
 
 fun isWeekend(date: LocalDate): Boolean =
