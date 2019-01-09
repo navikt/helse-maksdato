@@ -13,8 +13,3 @@ tailrec fun nextWeekday(after: LocalDate): LocalDate {
 
 fun isWeekend(date: LocalDate): Boolean =
    date.dayOfWeek == SATURDAY || date.dayOfWeek == SUNDAY
-
-fun LocalDate.plusDays(n: Int) = this.plusDays(n.toLong())
-
-fun LocalDate.minusDays(n: Int) = this.minusDays(n.toLong())
-
