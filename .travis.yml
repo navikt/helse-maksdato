@@ -1,0 +1,46 @@
+sudo: required
+language: java
+jdk:
+- openjdk11
+before_install:
+- openssl aes-256-cbc -K $encrypted_1dbfd5bf2bac_key -iv $encrypted_1dbfd5bf2bac_iv
+  -in travis/helseci.key.enc -out travis/helseci.key -d
+- git clone https://github.com/navikt/github-apps-support.git
+- export PATH=`pwd`/github-apps-support/bin:$PATH
+- export GH_TOKEN=$(generate-installation-token.sh `generate-jwt.sh ./travis/helseci.key
+  $GITHUB_APP_ID`)
+- export COMMIT_SHORT=$(git rev-parse --short HEAD)
+- export ORIGINAL_COMMITTER=$(git log -1 --pretty=format:'%an <%ae>')
+- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
+- rm "${JAVA_HOME}/lib/security/cacerts"
+- ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+script:
+- awk '($1=="version" && $3 ~ /[0-9]+/){$3=$3+1} 1' build.gradle.kts > build.gradle.new
+  && mv build.gradle.new build.gradle.kts
+- "./gradlew check"
+- "./gradlew build"
+- |
+  set -e
+  if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
+
+    git config user.name team-helse[bot]
+    git config user.email team-helse[bot]@users.noreply.github.com
+
+    git add build.gradle.kts
+    git commit -m "Bump version [skip ci]" -m "Caused by $TRAVIS_BUILD_WEB_URL" --author "$ORIGINAL_COMMITTER"
+
+    git push https://x-access-token:$GH_TOKEN@github.com/navikt/helse-maksdato.git HEAD:master
+  fi
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+env:
+  global:
+  - secure: KI9yoabzq0k+Ginqpyx1/+7EJeC7tUnsKMmH/+/E9q50ZU/ys4Amavr/WDnKO+oZa097+R0PAaaJlhU0rXlrr3vyZR5YUxV+5Nh6FDCX6H6KNZC6VCEeRMPeQ4zTYHviVadJc+M7JXIvTGHe45Z+3FQynbcjSbDmJdgr6OFSRRPf+E0St3ExwCeNrTkqZTa6eVFtpMXw4Fndk5KmSYn1fpax1M86UI23Luz8kht4cQP7JIHyfrO/T+jfXsxFiiKDtyrPDDCNVzk4BhzbBUdMlpD36Vk4BGTRd2KlGIx5NqF0xwVuuNU46iGZqxyIPKSsuKy3p8iOdDGvq3s9YnihAJUDfC8YeqfUVeDR4KFHl+DqW4Jwdn1hPpmU+c7rV296pOACvMfHUvaU4YUux1eucc5SatmRuq7KanyE3CVrLnK93fxGRwNdh9pQQzcRRnxY2WI4ybHrbvNb4ZXn6TUexUCI551LcCmJ2bUfYcrEbFn98vBSGbpXkp8G81tztkeTsKRVjnws7YwgYbUIzM+KVlo5YTTWF3WHCfCjw8v4qjU1Tp07qE0D5g6jr4X9rV/PHwNaAOXWDzayTPG3vctp9AwNf9I9+M72qSAhaR8WB3A3999KKDScPlZEX9YhS6xZ1Xru49EqjGbWPHDK8iTj/32R6i3P00wioGXAPq7po/M=
+notifications:
+   slack:
+     secure: lsdM0PelfRd2rly/fq17n1kw6yI859UbvXvIeHlcqofKGOd5YFyCEtPx+ZDX5dQ1dtnOVGwBx2daecUXOjNN4eSDwFT/h5cMHurglRVyAynMCKGUOCYl67YTaOm5TUTPAkWkz8gB/iWlc/zbGqCcdtEQ6+NH7id/LilGVtPmYSN1hAPqeEtEOnfAPOswvyjhmshGmNHmLSZcwvcaYVXKYxfdQ9IVb2AsVkWF4KeYjwDXiqmQTaSU94fvuaSU64UlQ6ZUMwb5kDt9ZHD10+/p4/sNFlUWdyxPb1J5WlOCSzA3HuBw+dzMLtjh7JyvrmQodpFuD8Ha19MXTsnVyFVaRr98DB0mNnmjckvStH70goxJkUJwaoJq/cjFOx/VZMzLmnROOzHv3FktsdQwDsrFs9FXuJnA5JJMZh4+jtzLtp+1Va/AHKdUALW8kX3t6aOlUuPT8OvpszCjLC5iKQapG4yGok56Utig6kJSuGw9Shb9OuA7vtbWdU4jHyXE6zdbp1giUOxuLag1ZwDuj0pTlIOdYptRzvUQ338FEybpenzHwBkyHF6CLjzFzJPr0ac1vbThTo1BIWc3vedGgKGBR8gRtDxoP1weL3SXHlAQeEkdQdkhIOAiylo1hOkeRQtVGjjISNFNrFjsY6zMhejnCZGCpLhaOWlvkk4N8j6/kDY=
