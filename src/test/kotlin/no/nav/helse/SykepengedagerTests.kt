@@ -10,39 +10,57 @@ object SykepengedagerTests: Spek({
    describe("calculate maksdato") {
 
       given("a start date and a list of earlier sykepenge days") {
-
-         on("no prior periods") {
-            it("adds the max of 248 weekdays") {
-               val startDato = LocalDate.of(2019, 1, 8)
-               val expected = LocalDate.of(2019, 12, 20)
-               maksdato(startDato, emptyList()) `should equal` expected
-            }
-         }
-
-         on("more than 26 weeks since last period") {
-            val earlierPeriods = listOf(
-               Tidsperiode(LocalDate.of(2017, 1, 1), LocalDate.of(2017, 3, 28))
-            )
-            it("adds the max of 248 weekdays") {
-               val startDato = LocalDate.of(2019, 1, 8)
-               val expected = LocalDate.of(2019, 12, 20)
-               maksdato(startDato, earlierPeriods) `should equal` expected
-            }
-         }
-
-         on("prior sykepenger history totalling more than 248 days in the last three years") {
-            it("adds 0 because no more days are available") {
-               val startDato = LocalDate.of(2019, 1, 8)
-               val expected = LocalDate.of(2019, 1, 8)
+         on("more than 26 weeks since last time") {
+            it("calculates the max of 248 days") {
+               val førsteSykepengedato = LocalDate.of(2019, 1, 25)
                val earlierPeriods = listOf(
-                  Tidsperiode(LocalDate.of(2018, 11, 11), LocalDate.of(2018, 12, 28)),
-                  Tidsperiode(LocalDate.of(2016, 10, 10), LocalDate.of(2017, 10, 20)),
-                  Tidsperiode(LocalDate.of(2016, 8, 8), LocalDate.of(2017, 9, 9))
+               Tidsperiode(LocalDate.of(2018, 1, 1), LocalDate.of(2018, 2, 28))
                )
-               maksdato(startDato, earlierPeriods) `should equal` expected
+               val expected = LocalDate.of(2020, 1, 7)
+               maksdato(førsteSykepengedato, earlierPeriods) `should equal` expected
             }
          }
 
+         on("all periods less than 26 weeks apart") {
+            it("subtracts all days from previous periods") {
+               val førsteSykepengedato = LocalDate.of(2019, 1, 25)
+               val earlierPeriods = listOf(
+               Tidsperiode(LocalDate.of(2018, 8, 1), LocalDate.of(2018, 8, 1)),
+               Tidsperiode(LocalDate.of(2018, 3, 1), LocalDate.of(2018, 4, 30))
+               )
+               val expected = LocalDate.of(2019, 11, 6)
+               maksdato(førsteSykepengedato, earlierPeriods) `should equal` expected
+            }
+         }
+
+         on("only first period has gap less than 26 weeks") {
+            it("subtracts only the days from that first period") {
+               val førsteSykepengedato = LocalDate.of(2019, 1, 25)
+               val earlierPeriods = listOf(
+               Tidsperiode(LocalDate.of(2018, 8, 1), LocalDate.of(2018, 8, 1)),
+               Tidsperiode(LocalDate.of(2017, 10, 1), LocalDate.of(2018, 1, 30))
+               )
+               val expected = LocalDate.of(2020, 1, 6)
+               maksdato(førsteSykepengedato, earlierPeriods) `should equal` expected
+            }
+         }
+
+         on("several periods are less than 26 weeks apart") {
+            it("subtracts all days from those periods") {
+               val førsteSykepengedato = LocalDate.of(2019, 1, 25)
+               val earlierPeriods = listOf(
+                  Tidsperiode(LocalDate.of(2018, 9, 1), LocalDate.of(2018, 9, 3)),
+                  Tidsperiode(LocalDate.of(2018, 1, 31), LocalDate.of(2018, 4, 30)),
+                  Tidsperiode(LocalDate.of(2017, 6, 20), LocalDate.of(2017, 8, 20)),
+                  Tidsperiode(LocalDate.of(2017, 1, 20), LocalDate.of(2017, 1, 25)),
+                  Tidsperiode(LocalDate.of(2016, 8, 20), LocalDate.of(2016, 8, 25)),
+                  Tidsperiode(LocalDate.of(2016, 4, 20), LocalDate.of(2016, 4, 30)),
+                  Tidsperiode(LocalDate.of(2015, 5, 30), LocalDate.of(2016, 1, 1))
+               )
+               val expected = LocalDate.of(2019, 7, 16)
+               maksdato(førsteSykepengedato, earlierPeriods) `should equal` expected
+            }
+         }
       }
 
    }
