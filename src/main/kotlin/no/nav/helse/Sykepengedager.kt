@@ -13,10 +13,10 @@ fun maksdato(førsteFraværsdag: LocalDate, førsteSykepengedag: LocalDate, tidl
 
 fun dagerForbrukt(førsteFraværsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
    val sisteTreÅr = Tidsperiode(førsteFraværsdag.minusYears(3), førsteFraværsdag)
-   val førstePeriodeMed26UkersMellomrom =
+   val første26UkersMellomrom =
       indexFørste26UkersMellomrom(førsteFraværsdag, tidligerePerioder)
 
-   return tidligerePerioder.subList(0, førstePeriodeMed26UkersMellomrom)
+   return tidligerePerioder.subList(0, første26UkersMellomrom)
       .flatMap { it.days() }
       .filterNot(::isWeekend)
       .filter{ it.isWithin(sisteTreÅr) }
@@ -27,7 +27,7 @@ fun indexFørste26UkersMellomrom(førsteFravøærsdag: LocalDate, tidligerePerio
    return tidligerePerioder.withIndex()
       .filter {
          val førsteDagNestePeriode = if (it.index == 0) førsteFravøærsdag else tidligerePerioder[it.index - 1].fom
-         val sisteDagForrigePeriode = if (it.index == 0) tidligerePerioder[it.index].tom else tidligerePerioder[it.index].tom
+         val sisteDagForrigePeriode = tidligerePerioder[it.index].tom
          WEEKS.between(sisteDagForrigePeriode, førsteDagNestePeriode) >= 26 }
       .map { it.index }
       .firstOrNull() ?:tidligerePerioder.size
