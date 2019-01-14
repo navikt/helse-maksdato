@@ -5,16 +5,16 @@ import java.time.temporal.ChronoUnit.*
 
 const val maxTilgjengeligeDager = 248
 
-fun maksdato(førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidsperiode>): LocalDate {
-   val dagerForbrukt = dagerForbrukt(førsteSykepengedag, tidligerePerioder)
+fun maksdato(førsteFraværsdag: LocalDate, førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidsperiode>): LocalDate {
+   val dagerForbrukt = dagerForbrukt(førsteFraværsdag, tidligerePerioder)
    val dagerTilgode = if (dagerForbrukt > maxTilgjengeligeDager) 0 else maxTilgjengeligeDager - dagerForbrukt
    return nWeekdaysFrom(dagerTilgode - 1, førsteSykepengedag)
 }
 
-fun dagerForbrukt(førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
-   val sisteTreÅr = Tidsperiode(førsteSykepengedag.minusYears(3), førsteSykepengedag)
+fun dagerForbrukt(førsteFraværsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
+   val sisteTreÅr = Tidsperiode(førsteFraværsdag.minusYears(3), førsteFraværsdag)
    val førstePeriodeMed26UkersMellomrom =
-      indexFørstePeriodeMed26UkersMellomrom(førsteSykepengedag, tidligerePerioder)
+      indexFørste26UkersMellomrom(førsteFraværsdag, tidligerePerioder)
 
    return tidligerePerioder.subList(0, førstePeriodeMed26UkersMellomrom)
       .flatMap { it.days() }
@@ -23,10 +23,10 @@ fun dagerForbrukt(førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidspe
       .count()
 }
 
-fun indexFørstePeriodeMed26UkersMellomrom(førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
+fun indexFørste26UkersMellomrom(førsteFravøærsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
    return tidligerePerioder.withIndex()
       .filter {
-         val førsteDagNestePeriode = if (it.index == 0) førsteSykepengedag else tidligerePerioder[it.index - 1].fom
+         val førsteDagNestePeriode = if (it.index == 0) førsteFravøærsdag else tidligerePerioder[it.index - 1].fom
          val sisteDagForrigePeriode = if (it.index == 0) tidligerePerioder[it.index].tom else tidligerePerioder[it.index].tom
          WEEKS.between(sisteDagForrigePeriode, førsteDagNestePeriode) >= 26 }
       .map { it.index }
@@ -41,10 +41,10 @@ data class Tidsperiode(val fom: LocalDate, val tom: LocalDate) {
 
    fun contains(day: LocalDate): Boolean = !(day.isBefore(fom) || day.isAfter(tom))
 
-   fun nrOfDays() = if (fom == tom ) 1 else DAYS.between(fom, tom) + 1
 
    fun days(): List<LocalDate> = (0 until nrOfDays()).map(fom::plusDays)
 
+   private fun nrOfDays() = if (fom == tom ) 1 else DAYS.between(fom, tom) + 1
 }
 
 fun LocalDate.isWithin(period: Tidsperiode) = period.contains(this)
