@@ -22,6 +22,16 @@ object SykepengedagerTests: Spek({
             }
          }
 
+         on("no prior periods") {
+            it("calculates the max of 248 days") {
+               val førsteSykepengedag = LocalDate.of(2019, 1, 15)
+               val førsteFraværsdag = LocalDate.of(2019, 1, 1)
+               val earlierPeriods = emptyList<Tidsperiode>()
+               val expected = LocalDate.of(2019, 12, 26)
+               maksdato(førsteFraværsdag, førsteSykepengedag, earlierPeriods) `should equal` expected
+            }
+         }
+
          on("all periods less than 26 weeks apart") {
             it("subtracts all days from previous periods") {
                val førsteSykepengedag = LocalDate.of(2019, 1, 15)

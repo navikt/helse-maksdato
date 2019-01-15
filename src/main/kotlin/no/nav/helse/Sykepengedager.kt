@@ -12,6 +12,8 @@ fun maksdato(førsteFraværsdag: LocalDate, førsteSykepengedag: LocalDate, tidl
 }
 
 fun dagerForbrukt(førsteFraværsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
+   if (tidligerePerioder.isEmpty()) return 0
+
    val sisteTreÅr = Tidsperiode(førsteFraværsdag.minusYears(3), førsteFraværsdag)
    val første26UkersMellomrom =
       indexFørste26UkersMellomrom(førsteFraværsdag, tidligerePerioder)
