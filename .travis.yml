@@ -1,57 +1,57 @@
 sudo: required
 language: java
 jdk:
-- openjdk11
+   - openjdk11
 before_install:
-- openssl aes-256-cbc -K $encrypted_1dbfd5bf2bac_key -iv $encrypted_1dbfd5bf2bac_iv
-  -in travis/helseci.key.enc -out travis/helseci.key -d
-- git clone https://github.com/navikt/github-apps-support.git
-- export PATH=`pwd`/github-apps-support/bin:$PATH
-- export GH_TOKEN=$(generate-installation-token.sh `generate-jwt.sh ./travis/helseci.key
-  $GITHUB_APP_ID`)
-- export COMMIT_SHORT=$(git rev-parse --short HEAD)
-- export ORIGINAL_COMMITTER=$(git log -1 --pretty=format:'%an <%ae>')
-- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
-- rm "${JAVA_HOME}/lib/security/cacerts"
-- ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+   - openssl aes-256-cbc -K $encrypted_1dbfd5bf2bac_key -iv $encrypted_1dbfd5bf2bac_iv
+      -in travis/helseci.key.enc -out travis/helseci.key -d
+   - git clone https://github.com/navikt/github-apps-support.git
+   - export PATH=`pwd`/github-apps-support/bin:$PATH
+   - export GH_TOKEN=$(generate-installation-token.sh `generate-jwt.sh ./travis/helseci.key
+      $GITHUB_APP_ID`)
+   - export COMMIT_SHORT=$(git rev-parse --short HEAD)
+   - export ORIGINAL_COMMITTER=$(git log -1 --pretty=format:'%an <%ae>')
+   - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
+   - rm "${JAVA_HOME}/lib/security/cacerts"
+   - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
 script:
-- |
-  set -e
-  if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
-    ./gradlew check shadowJar
+   - |
+      set -e
+      if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
+        ./gradlew check shadowJar
 
-    docker build --pull -t $DOCKER_IMG_NAME:$COMMIT_SHORT .
-    echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-    docker push $DOCKER_IMG_NAME:$COMMIT_SHORT
+        docker build --pull -t $DOCKER_IMG_NAME:$COMMIT_SHORT .
+        echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+        docker push $DOCKER_IMG_NAME:$COMMIT_SHORT
 
-    git config user.name team-helse[bot]
-    git config user.email team-helse[bot]@users.noreply.github.com
+        git config user.name team-helse[bot]
+        git config user.email team-helse[bot]@users.noreply.github.com
 
-    git clone https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git
+        git clone https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git
 
-    cd helse-iac
-    ./set-image.sh preprod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
-    ./set-image.sh prod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
+        cd helse-iac
+        ./set-image.sh preprod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
+        ./set-image.sh prod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
 
-    git add preprod/$APP_NAME/naiserator.yaml
-    git add prod/$APP_NAME/naiserator.yaml
-    git commit -m "Bump $APP_NAME" -m "Caused by $TRAVIS_BUILD_WEB_URL" --author "$ORIGINAL_COMMITTER"
-    git push https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git master
-  fi
+        git add preprod/$APP_NAME/naiserator.yaml
+        git add prod/$APP_NAME/naiserator.yaml
+        git commit -m "Bump $APP_NAME" -m "Caused by $TRAVIS_BUILD_WEB_URL" --author "$ORIGINAL_COMMITTER"
+        git push https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git master
+      fi
 before_cache:
-- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
-  directories:
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
+   directories:
+      - "$HOME/.gradle/caches/"
+      - "$HOME/.gradle/wrapper/"
 env:
-  global:
-  - APP_NAME=maksdato
-  - DOCKER_IMG_NAME=navikt/maksdato
-  - secure: KI9yoabzq0k+Ginqpyx1/+7EJeC7tUnsKMmH/+/E9q50ZU/ys4Amavr/WDnKO+oZa097+R0PAaaJlhU0rXlrr3vyZR5YUxV+5Nh6FDCX6H6KNZC6VCEeRMPeQ4zTYHviVadJc+M7JXIvTGHe45Z+3FQynbcjSbDmJdgr6OFSRRPf+E0St3ExwCeNrTkqZTa6eVFtpMXw4Fndk5KmSYn1fpax1M86UI23Luz8kht4cQP7JIHyfrO/T+jfXsxFiiKDtyrPDDCNVzk4BhzbBUdMlpD36Vk4BGTRd2KlGIx5NqF0xwVuuNU46iGZqxyIPKSsuKy3p8iOdDGvq3s9YnihAJUDfC8YeqfUVeDR4KFHl+DqW4Jwdn1hPpmU+c7rV296pOACvMfHUvaU4YUux1eucc5SatmRuq7KanyE3CVrLnK93fxGRwNdh9pQQzcRRnxY2WI4ybHrbvNb4ZXn6TUexUCI551LcCmJ2bUfYcrEbFn98vBSGbpXkp8G81tztkeTsKRVjnws7YwgYbUIzM+KVlo5YTTWF3WHCfCjw8v4qjU1Tp07qE0D5g6jr4X9rV/PHwNaAOXWDzayTPG3vctp9AwNf9I9+M72qSAhaR8WB3A3999KKDScPlZEX9YhS6xZ1Xru49EqjGbWPHDK8iTj/32R6i3P00wioGXAPq7po/M=
-  - secure: mflmpmHaqjEcDF6hcG/1Gp3q6KBW8Z9ECLnWVv0X7no7vIJGX0SbhBKCQF7PQgPQ/J8NP4Hq1vsvMGDJiz3uDuZQv4G5WNV/FyZaGRBEuyYgqVB7PkNTJIu48gf/EBMtKBNSAbHbM7QPgDofIPjaiANMPPO/mXaozT5Jw0DU6Lg+ba6vai7CUjoBZBUnDILvRMPNoG2CLdqABNQ3uDhiCsLvW1i2YH/HfRiz0htEn+FDlAESNVqGpXTgvoJfGdRAggpougUBUPaEyvqFBMvWLArCwQorOIEMMcdfuayeGbo0MwX6IxUMVqrqrKaIyAThVkH+8yPy9GnOVpvNKcNE3b0ACVS9LWcO0HJPA8DVx475eMwzDJq3S/N7osD8N+QkkSpxb8hJR9MlGxumsF5tVAj1sZ09wc6/TvC952vgC7X5bDrzDDg+aAFRZrGzT6EzHj86z7mN9VGkU0ajz3i3tyQpawNPQ9igXbAZvIAX7szhKAPkpo/bMyDlKdcyVFq2RaKAtzNPxVUXwXE4ZHYQ1Rcqdma/MoM2urh7u0JAknkXWST/TkDSiEPV0OZt/ro4qYyYxB5km/xOLjGGdoF1F+xS79nk7Mk4pk0NdiF2pm+jBt+DDEVSDiCOnsHNJEVFDMw3+uQ21WsNweJ+NaE4fR14VpK1yH0AHnfJvNOAWYM=
-  - secure: GW2sg+40JmorJVw/az9GADDLlpJbMC474CK0nkqyscka7NNyBQAaMQpRXTGT1MMDP1kvJwJcpVClBXFgPeUcgecPrQLWGOwuEZ469GT2L9r7Q6dFZJTPNqpPXMyyMFz8Y4ic4ApMs1mgcgBEjem84hqJYt5ZldS5/dLd6ULma2TpNi2IlWLsT14/rWnrc8oPpWA8DtXLA545KbVr7bNpG/xUCSU7o7iLUp3MELYw3BoprZDPypZ0T3xYatSUhjx63K8ipmJKZhPvSecUkP4VgFi+o+FeFJIh+g4x19sExHU1zZgbAEy5YluifHNMpuarevESGTbVlskXPImFZVHwz/Txn3eQXbbRjk8OWM+hc2H10Exh+t8WNolcbfG/NjlwgBxonvNNwlUWNrrXZ5ULYGGnx1sQkGsBDhE7VdpnisKDKlSvfgWVpJKvmYN2FoNO5D2cUdU6MVCVmIX0n1EY2TgPMH/1C64zmPEnTBMuL3Gcfyv/dtW1RhDXsVB6W/df4yhXR9Sf1uYCpuspVcfUpQxNEcDT3PIje499ZUMbFd63iltQNUtY1r+1Id7gMsobLhjx4SUfSI/L2suI8QLVfo16VZBoJIvP06PV48I6NNCM0cjNn5HbdH9sEAt2sivN3E7OoCw6b+g54hUJxqlIdsjIbFkO1USVuShmW18zsgs=
+   global:
+      - APP_NAME=maksdato
+      - DOCKER_IMG_NAME=navikt/maksdato
+      - secure: KI9yoabzq0k+Ginqpyx1/+7EJeC7tUnsKMmH/+/E9q50ZU/ys4Amavr/WDnKO+oZa097+R0PAaaJlhU0rXlrr3vyZR5YUxV+5Nh6FDCX6H6KNZC6VCEeRMPeQ4zTYHviVadJc+M7JXIvTGHe45Z+3FQynbcjSbDmJdgr6OFSRRPf+E0St3ExwCeNrTkqZTa6eVFtpMXw4Fndk5KmSYn1fpax1M86UI23Luz8kht4cQP7JIHyfrO/T+jfXsxFiiKDtyrPDDCNVzk4BhzbBUdMlpD36Vk4BGTRd2KlGIx5NqF0xwVuuNU46iGZqxyIPKSsuKy3p8iOdDGvq3s9YnihAJUDfC8YeqfUVeDR4KFHl+DqW4Jwdn1hPpmU+c7rV296pOACvMfHUvaU4YUux1eucc5SatmRuq7KanyE3CVrLnK93fxGRwNdh9pQQzcRRnxY2WI4ybHrbvNb4ZXn6TUexUCI551LcCmJ2bUfYcrEbFn98vBSGbpXkp8G81tztkeTsKRVjnws7YwgYbUIzM+KVlo5YTTWF3WHCfCjw8v4qjU1Tp07qE0D5g6jr4X9rV/PHwNaAOXWDzayTPG3vctp9AwNf9I9+M72qSAhaR8WB3A3999KKDScPlZEX9YhS6xZ1Xru49EqjGbWPHDK8iTj/32R6i3P00wioGXAPq7po/M=
+      - secure: mflmpmHaqjEcDF6hcG/1Gp3q6KBW8Z9ECLnWVv0X7no7vIJGX0SbhBKCQF7PQgPQ/J8NP4Hq1vsvMGDJiz3uDuZQv4G5WNV/FyZaGRBEuyYgqVB7PkNTJIu48gf/EBMtKBNSAbHbM7QPgDofIPjaiANMPPO/mXaozT5Jw0DU6Lg+ba6vai7CUjoBZBUnDILvRMPNoG2CLdqABNQ3uDhiCsLvW1i2YH/HfRiz0htEn+FDlAESNVqGpXTgvoJfGdRAggpougUBUPaEyvqFBMvWLArCwQorOIEMMcdfuayeGbo0MwX6IxUMVqrqrKaIyAThVkH+8yPy9GnOVpvNKcNE3b0ACVS9LWcO0HJPA8DVx475eMwzDJq3S/N7osD8N+QkkSpxb8hJR9MlGxumsF5tVAj1sZ09wc6/TvC952vgC7X5bDrzDDg+aAFRZrGzT6EzHj86z7mN9VGkU0ajz3i3tyQpawNPQ9igXbAZvIAX7szhKAPkpo/bMyDlKdcyVFq2RaKAtzNPxVUXwXE4ZHYQ1Rcqdma/MoM2urh7u0JAknkXWST/TkDSiEPV0OZt/ro4qYyYxB5km/xOLjGGdoF1F+xS79nk7Mk4pk0NdiF2pm+jBt+DDEVSDiCOnsHNJEVFDMw3+uQ21WsNweJ+NaE4fR14VpK1yH0AHnfJvNOAWYM=
+      - secure: GW2sg+40JmorJVw/az9GADDLlpJbMC474CK0nkqyscka7NNyBQAaMQpRXTGT1MMDP1kvJwJcpVClBXFgPeUcgecPrQLWGOwuEZ469GT2L9r7Q6dFZJTPNqpPXMyyMFz8Y4ic4ApMs1mgcgBEjem84hqJYt5ZldS5/dLd6ULma2TpNi2IlWLsT14/rWnrc8oPpWA8DtXLA545KbVr7bNpG/xUCSU7o7iLUp3MELYw3BoprZDPypZ0T3xYatSUhjx63K8ipmJKZhPvSecUkP4VgFi+o+FeFJIh+g4x19sExHU1zZgbAEy5YluifHNMpuarevESGTbVlskXPImFZVHwz/Txn3eQXbbRjk8OWM+hc2H10Exh+t8WNolcbfG/NjlwgBxonvNNwlUWNrrXZ5ULYGGnx1sQkGsBDhE7VdpnisKDKlSvfgWVpJKvmYN2FoNO5D2cUdU6MVCVmIX0n1EY2TgPMH/1C64zmPEnTBMuL3Gcfyv/dtW1RhDXsVB6W/df4yhXR9Sf1uYCpuspVcfUpQxNEcDT3PIje499ZUMbFd63iltQNUtY1r+1Id7gMsobLhjx4SUfSI/L2suI8QLVfo16VZBoJIvP06PV48I6NNCM0cjNn5HbdH9sEAt2sivN3E7OoCw6b+g54hUJxqlIdsjIbFkO1USVuShmW18zsgs=
 notifications:
-  slack:
-    secure: NUMs/SN5ZsR/IVcwUiOPJXrvHbSUmt1fgr2Qw0ULFqhJy+OLsdBdQnCX5xpXfULKvaVw32i5njUWY4kbyOdjDIf7plQBt7zJoSYK9LUQTQHD+0YArreY2rFddnsA+F1ruNZd45t/FSA5nSEP/alVuwE8V6/Q2FFskhepEwXS2CWx6W3ww4DnSHHuRwydzVm0rB9t1b275Y/Nh1r/EBdUOyFcaV5ttAZoOgMBoeXD/aHjATXTqJJIw8JnmTruX3uFTvvu4Ti4OiqyexqBopvsD63wMCZ7gAB8NoJmP1YTZI4afA/RaPlqCo8YrHjeC0qy7iDxdI7QX6a0+bEL7naw/Sj0hZN4sSQevfvDd/JT90rtcK8yPb9WWUXkY2ByKE7Ls31uvbbWUeZZZwOdDgToYAWaH6RntX0ayTPNpvZdU05Zh0SGOaTWLxgp+uYfitB/G4o0V7b9f/boNhBBuizCSwn8KvYYE5RznxNk6vh86+JQnlrT+/S2Lthe3lIkYPtaGf4z4TxarzioCblchQqJChr7Ki8CzntwvHPpXKsmy9YDkV77mjvnWG5zDbafyUg17W2fC6MlXfMLhuHhJwXje77F5C4GwuhvttY+3QWaLx+r4qlE94gXW4on9JYXaIxeHyCunYL6+V4vGol4Wd2QIvB+H82FYfAWe+Mk/iO2Tvk=
+   slack:
+      secure: NUMs/SN5ZsR/IVcwUiOPJXrvHbSUmt1fgr2Qw0ULFqhJy+OLsdBdQnCX5xpXfULKvaVw32i5njUWY4kbyOdjDIf7plQBt7zJoSYK9LUQTQHD+0YArreY2rFddnsA+F1ruNZd45t/FSA5nSEP/alVuwE8V6/Q2FFskhepEwXS2CWx6W3ww4DnSHHuRwydzVm0rB9t1b275Y/Nh1r/EBdUOyFcaV5ttAZoOgMBoeXD/aHjATXTqJJIw8JnmTruX3uFTvvu4Ti4OiqyexqBopvsD63wMCZ7gAB8NoJmP1YTZI4afA/RaPlqCo8YrHjeC0qy7iDxdI7QX6a0+bEL7naw/Sj0hZN4sSQevfvDd/JT90rtcK8yPb9WWUXkY2ByKE7Ls31uvbbWUeZZZwOdDgToYAWaH6RntX0ayTPNpvZdU05Zh0SGOaTWLxgp+uYfitB/G4o0V7b9f/boNhBBuizCSwn8KvYYE5RznxNk6vh86+JQnlrT+/S2Lthe3lIkYPtaGf4z4TxarzioCblchQqJChr7Ki8CzntwvHPpXKsmy9YDkV77mjvnWG5zDbafyUg17W2fC6MlXfMLhuHhJwXje77F5C4GwuhvttY+3QWaLx+r4qlE94gXW4on9JYXaIxeHyCunYL6+V4vGol4Wd2QIvB+H82FYfAWe+Mk/iO2Tvk=
