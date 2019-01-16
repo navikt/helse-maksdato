@@ -42,7 +42,7 @@ fun Routing.maksdato() {
             is Success -> call.respond(
                maksdato(
                   input.request.førsteFraværsdag,
-                  input.request.førsteFraværsdag,
+                  input.request.førsteSykepengedag,
                   input.request.tidligerePerioder
                ).format(DateTimeFormatter.ISO_DATE)
             )
