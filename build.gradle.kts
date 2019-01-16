@@ -11,7 +11,6 @@ val slf4jVersion = "1.7.25"
 val mainClass = "no.nav.helse.AppKt"
 
 group = "no.nav.helse"
-version = 8
 
 plugins {
    kotlin("jvm") version "1.3.11"
