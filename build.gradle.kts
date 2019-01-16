@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.*
+
 val junitJupiterVersion = "5.3.2"
 val spekVersion = "1.2.1"
 val kluentVersion = "1.45"
@@ -5,6 +7,8 @@ val ktorVersion = "1.1.1"
 val prometheusVersion = "0.6.0"
 val orgJsonVersion = "20180813"
 val slf4jVersion = "1.7.25"
+
+val mainClass = "no.nav.helse.AppKt"
 
 group = "no.nav.helse"
 version = 8
@@ -49,6 +53,12 @@ java {
    targetCompatibility = JavaVersion.VERSION_11
 }
 
+tasks.withType<ShadowJar> {
+   archiveBaseName.value("app")
+   archiveClassifier.value(null)
+   archiveVersion.value(null)
+}
+
 tasks.withType<Test> {
    useJUnitPlatform()
    testLogging {
@@ -60,3 +70,8 @@ tasks.withType<Wrapper> {
    gradleVersion = "5.1.1"
 }
 
+tasks.named<Jar>("jar") {
+   manifest {
+      attributes["Main-Class"] = mainClass
+   }
+}
