@@ -7,7 +7,7 @@ val orgJsonVersion = "20180813"
 val slf4jVersion = "1.7.25"
 
 group = "no.nav.helse"
-version = 6
+version = 7
 
 plugins {
    kotlin("jvm") version "1.3.11"
