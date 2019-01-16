@@ -1,6 +1,10 @@
 val junitJupiterVersion = "5.3.2"
 val spekVersion = "1.2.1"
 val kluentVersion = "1.45"
+val ktorVersion = "1.1.1"
+val prometheusVersion = "0.6.0"
+val orgJsonVersion = "20180813"
+val slf4jVersion = "1.7.25"
 
 group = "no.nav.helse"
 version = 6
@@ -18,6 +22,10 @@ buildscript {
 
 dependencies {
    compile(kotlin("stdlib"))
+   compile("io.ktor:ktor-server-netty:$ktorVersion")
+   compile("io.prometheus:simpleclient_common:$prometheusVersion")
+   compile("org.json:json:$orgJsonVersion")
+   compile("org.slf4j:slf4j-simple:$slf4jVersion")
 
    testCompile("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
    testCompile("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
