@@ -34,6 +34,7 @@ dependencies {
    testCompile("org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion")
    testRuntime("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
    testCompile("org.amshove.kluent:kluent:$kluentVersion")
+   testCompile("io.ktor:ktor-server-test-host:$ktorVersion")
    testCompile("org.jetbrains.spek:spek-api:$spekVersion") {
       exclude(group = "org.jetbrains.kotlin")
    }
