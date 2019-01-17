@@ -55,6 +55,8 @@ object HttpTests: Spek({
                          {
                           "førsteFraværsdag": "2019-01-01",
                           "førsteSykepengedag": "2019-01-15",
+                          "personensAlder": 25,
+                          "yrkesstatus": "ARBEIDSTAKER",
                           "tidligerePerioder": [
                              {"fom": "2018-08-01", "tom": "2018-08-01"},
                              {"fom": "2018-03-01", "tom": "2018-04-30"}
@@ -68,6 +70,7 @@ object HttpTests: Spek({
                      setBody(json)
                   }) {
                      response.status() `should equal` OK
+                     println(response.content)
                      response.content ?: "" `should equal` "2020-10-25"
                   }
                }

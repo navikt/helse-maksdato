@@ -1,22 +1,29 @@
 package no.nav.helse
 
+import no.nav.helse.Yrkesstatus.*
 import java.time.*
 import java.time.temporal.ChronoUnit.*
 
-const val maxTilgjengeligeDager = 248
-
-fun maksdato(førsteFraværsdag: LocalDate, førsteSykepengedag: LocalDate, tidligerePerioder: List<Tidsperiode>): LocalDate {
-   val dagerForbrukt = dagerForbrukt(førsteFraværsdag, tidligerePerioder)
+fun maksdato(grunnlag: Grunnlagsdata): LocalDate {
+   val maxTilgjengeligeDager = maxTilgjengeligeDager(grunnlag.personensAlder, grunnlag.yrkesstatus)
+   val dagerForbrukt = dagerForbrukt(grunnlag.førsteFraværsdag, grunnlag.tidligerePerioder)
    val dagerTilgode = if (dagerForbrukt > maxTilgjengeligeDager) 0 else maxTilgjengeligeDager - dagerForbrukt
-   return nWeekdaysFrom(dagerTilgode - 1, førsteSykepengedag)
+   return nWeekdaysFrom(dagerTilgode - 1, grunnlag.førsteSykepengedag)
 }
+
+fun maxTilgjengeligeDager(personensAlder: Int, yrkesstatus: Yrkesstatus) =
+   when {
+      personensAlder in (67..70) -> 60
+      yrkesstatus == IKKE_I_ARBEID -> 250
+      else -> 248
+   }
 
 fun dagerForbrukt(førsteFraværsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
    if (tidligerePerioder.isEmpty()) return 0
 
    val sisteTreÅr = Tidsperiode(førsteFraværsdag.minusYears(3), førsteFraværsdag)
    val første26UkersMellomrom =
-      indexFørste26UkersMellomrom(førsteFraværsdag, tidligerePerioder)
+      første26UkersMellomrom(førsteFraværsdag, tidligerePerioder)
 
    return tidligerePerioder.subList(0, første26UkersMellomrom)
       .flatMap { it.days() }
@@ -25,7 +32,7 @@ fun dagerForbrukt(førsteFraværsdag: LocalDate, tidligerePerioder: List<Tidsper
       .count()
 }
 
-fun indexFørste26UkersMellomrom(førsteFravøærsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
+fun første26UkersMellomrom(førsteFravøærsdag: LocalDate, tidligerePerioder: List<Tidsperiode>): Int {
    return tidligerePerioder.withIndex()
       .filter {
          val førsteDagNestePeriode = if (it.index == 0) førsteFravøærsdag else tidligerePerioder[it.index - 1].fom

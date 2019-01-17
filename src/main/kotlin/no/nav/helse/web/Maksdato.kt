@@ -38,18 +38,14 @@ fun Routing.maksdato() {
    post("/") {
       counter.inc()
       try {
-         when (val input = call.receiveJson().toMaksdatoRequest()) {
+         when (val input = call.receiveJson().toGrunnlag()) {
             is Success -> call.respond(
-               maksdato(
-                  input.request.førsteFraværsdag,
-                  input.request.førsteSykepengedag,
-                  input.request.tidligerePerioder
-               ).format(DateTimeFormatter.ISO_DATE)
+               maksdato(input.grunnlag).format(DateTimeFormatter.ISO_DATE)
             )
             is Failure -> call.respond(BadRequest, input.errMsg)
          }
       } catch (ex: Exception) {
-         call.respond(BadRequest, "You did not supply valid JSON")
+         call.respond(BadRequest, "That doesn't look like valid JSON")
       }
 
    }
