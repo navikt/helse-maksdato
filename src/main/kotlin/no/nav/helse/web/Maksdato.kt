@@ -4,7 +4,6 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
-import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.prometheus.client.*
@@ -15,9 +14,14 @@ import java.time.format.*
 
 private val collectorRegistry = CollectorRegistry.defaultRegistry
 
-private val counter = Counter.build()
+private val counterMaksdato = Counter.build()
    .name("maksdato_requests")
    .help("Antall kall til maksdato-beregning")
+   .register()
+
+private val counterDagerTilgode = Counter.build()
+   .name("maksdager_requests")
+   .help("Antall kall til maksdager-beregning")
    .register()
 
 fun Application.maksdatoCalc() {
@@ -36,8 +40,8 @@ fun Application.maksdatoCalc() {
 }
 
 fun Routing.maksdato() {
-   post("/") {
-      counter.inc()
+   post("/maksdato") {
+      counterMaksdato.inc()
       try {
          when (val input = call.receiveJson().toGrunnlag()) {
             is Success -> call.respond(
@@ -48,7 +52,20 @@ fun Routing.maksdato() {
       } catch (ex: Exception) {
          call.respond(BadRequest, "That doesn't look like valid JSON")
       }
+   }
 
+   post("/dagertilgode") {
+      counterDagerTilgode.inc()
+      try {
+         when (val input = call.receiveJson().toGrunnlag()) {
+            is Success -> call.respond(
+               dagerTilgode(input.grunnlag).toString()
+            )
+            is Failure -> call.respond(BadRequest, input.errMsg)
+         }
+      } catch (ex: Exception) {
+         call.respond(BadRequest, "That doesn't look like valid JSON")
+      }
    }
 }
 
