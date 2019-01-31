@@ -34,7 +34,7 @@ object SykepengedagerTests: Spek({
                   LocalDate.of(2019, 1, 15),
                   25,
                   ARBEIDSTAKER,
-                  emptyList<Tidsperiode>()
+                  emptyList()
                )
                val expected = LocalDate.of(2019, 12, 26)
                maksdato(grunnlag) `should equal` expected

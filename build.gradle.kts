@@ -2,8 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.*
 
 val junitJupiterVersion = "5.3.2"
 val spekVersion = "1.2.1"
-val kluentVersion = "1.45"
-val ktorVersion = "1.1.1"
+val kluentVersion = "1.46"
+val ktorVersion = "1.1.2"
 val prometheusVersion = "0.6.0"
 val orgJsonVersion = "20180813"
 val slf4jVersion = "1.7.25"
@@ -13,8 +13,8 @@ val mainClass = "no.nav.helse.AppKt"
 group = "no.nav.helse"
 
 plugins {
-   kotlin("jvm") version "1.3.11"
-   id("com.github.johnrengelman.shadow") version "4.0.3"
+   kotlin("jvm") version "1.3.20"
+   id("com.github.johnrengelman.shadow") version "4.0.4"
 }
 
 buildscript {

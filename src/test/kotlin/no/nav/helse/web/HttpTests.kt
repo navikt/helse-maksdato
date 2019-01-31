@@ -1,10 +1,12 @@
 package no.nav.helse.web
 
 import io.ktor.application.*
+import io.ktor.http.*
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.request.*
 import io.ktor.server.testing.*
 import org.amshove.kluent.*
 import org.jetbrains.spek.api.*
@@ -41,6 +43,7 @@ object HttpTests: Spek({
                withTestApplication(Application::maksdatoCalc) {
                   with(handleRequest(Post, "/") {
                      setBody("""{"a": 1}""")
+                     addHeader("Content-Type", "application/json")
                   }) {
                      response.status() `should equal` BadRequest
                      val responseTxt = response.content ?: ""
@@ -68,9 +71,9 @@ object HttpTests: Spek({
                withTestApplication(Application::maksdatoCalc) {
                   with(handleRequest(Post, "/") {
                      setBody(json)
+                     addHeader("Content-Type", "application/json")
                   }) {
                      response.status() `should equal` OK
-                     println(response.content)
                      response.content ?: "" `should equal` "2020-10-25"
                   }
                }

@@ -4,6 +4,7 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.prometheus.client.*
