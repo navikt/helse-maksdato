@@ -1,57 +1,30 @@
 sudo: required
 language: java
 jdk:
-   - openjdk11
+- openjdk11
 before_install:
-   - openssl aes-256-cbc -K $encrypted_1dbfd5bf2bac_key -iv $encrypted_1dbfd5bf2bac_iv
-      -in travis/helseci.key.enc -out travis/helseci.key -d
-   - git clone https://github.com/navikt/github-apps-support.git
-   - export PATH=`pwd`/github-apps-support/bin:$PATH
-   - export GH_TOKEN=$(generate-installation-token.sh `generate-jwt.sh ./travis/helseci.key
-      $GITHUB_APP_ID`)
-   - export COMMIT_SHORT=$(git rev-parse --short HEAD)
-   - export ORIGINAL_COMMITTER=$(git log -1 --pretty=format:'%an <%ae>')
-   - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
-   - rm "${JAVA_HOME}/lib/security/cacerts"
-   - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+- openssl aes-256-cbc -K $encrypted_5e203709a340_key -iv $encrypted_5e203709a340_iv
+  -in travis/codesigning.asc.enc -out travis/codesigning.asc -d
+- export COMMIT_SHORT=$(git rev-parse --short HEAD)
 script:
-   - |
-      set -e
-      if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
-        ./gradlew check shadowJar
+- mvn clean install
+- |
+  set -e
+  if [ "$TRAVIS_BRANCH" = 'master' ] && [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
+     echo "Importing GPG key into keyring"
+     gpg --fast-import travis/codesigning.asc
+     mvn versions:set -DnewVersion="$COMMIT_SHORT"
 
-        docker build --pull -t $DOCKER_IMG_NAME:$COMMIT_SHORT .
-        echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-        docker push $DOCKER_IMG_NAME:$COMMIT_SHORT
-
-        git config user.name team-helse[bot]
-        git config user.email team-helse[bot]@users.noreply.github.com
-
-        git clone https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git
-
-        cd helse-iac
-        ./set-image.sh preprod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
-        ./set-image.sh prod/$APP_NAME/naiserator.yaml $DOCKER_IMG_NAME:$COMMIT_SHORT
-
-        git add preprod/$APP_NAME/naiserator.yaml
-        git add prod/$APP_NAME/naiserator.yaml
-        git commit -m "Bump $APP_NAME" -m "Caused by $TRAVIS_BUILD_WEB_URL" --author "$ORIGINAL_COMMITTER"
-        git push https://x-access-token:$GH_TOKEN@github.com/navikt/helse-iac.git master
-      fi
-before_cache:
-   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-cache:
-   directories:
-      - "$HOME/.gradle/caches/"
-      - "$HOME/.gradle/wrapper/"
-env:
-   global:
-      - APP_NAME=maksdato
-      - DOCKER_IMG_NAME=navikt/maksdato
-      - secure: KI9yoabzq0k+Ginqpyx1/+7EJeC7tUnsKMmH/+/E9q50ZU/ys4Amavr/WDnKO+oZa097+R0PAaaJlhU0rXlrr3vyZR5YUxV+5Nh6FDCX6H6KNZC6VCEeRMPeQ4zTYHviVadJc+M7JXIvTGHe45Z+3FQynbcjSbDmJdgr6OFSRRPf+E0St3ExwCeNrTkqZTa6eVFtpMXw4Fndk5KmSYn1fpax1M86UI23Luz8kht4cQP7JIHyfrO/T+jfXsxFiiKDtyrPDDCNVzk4BhzbBUdMlpD36Vk4BGTRd2KlGIx5NqF0xwVuuNU46iGZqxyIPKSsuKy3p8iOdDGvq3s9YnihAJUDfC8YeqfUVeDR4KFHl+DqW4Jwdn1hPpmU+c7rV296pOACvMfHUvaU4YUux1eucc5SatmRuq7KanyE3CVrLnK93fxGRwNdh9pQQzcRRnxY2WI4ybHrbvNb4ZXn6TUexUCI551LcCmJ2bUfYcrEbFn98vBSGbpXkp8G81tztkeTsKRVjnws7YwgYbUIzM+KVlo5YTTWF3WHCfCjw8v4qjU1Tp07qE0D5g6jr4X9rV/PHwNaAOXWDzayTPG3vctp9AwNf9I9+M72qSAhaR8WB3A3999KKDScPlZEX9YhS6xZ1Xru49EqjGbWPHDK8iTj/32R6i3P00wioGXAPq7po/M=
-      - secure: mflmpmHaqjEcDF6hcG/1Gp3q6KBW8Z9ECLnWVv0X7no7vIJGX0SbhBKCQF7PQgPQ/J8NP4Hq1vsvMGDJiz3uDuZQv4G5WNV/FyZaGRBEuyYgqVB7PkNTJIu48gf/EBMtKBNSAbHbM7QPgDofIPjaiANMPPO/mXaozT5Jw0DU6Lg+ba6vai7CUjoBZBUnDILvRMPNoG2CLdqABNQ3uDhiCsLvW1i2YH/HfRiz0htEn+FDlAESNVqGpXTgvoJfGdRAggpougUBUPaEyvqFBMvWLArCwQorOIEMMcdfuayeGbo0MwX6IxUMVqrqrKaIyAThVkH+8yPy9GnOVpvNKcNE3b0ACVS9LWcO0HJPA8DVx475eMwzDJq3S/N7osD8N+QkkSpxb8hJR9MlGxumsF5tVAj1sZ09wc6/TvC952vgC7X5bDrzDDg+aAFRZrGzT6EzHj86z7mN9VGkU0ajz3i3tyQpawNPQ9igXbAZvIAX7szhKAPkpo/bMyDlKdcyVFq2RaKAtzNPxVUXwXE4ZHYQ1Rcqdma/MoM2urh7u0JAknkXWST/TkDSiEPV0OZt/ro4qYyYxB5km/xOLjGGdoF1F+xS79nk7Mk4pk0NdiF2pm+jBt+DDEVSDiCOnsHNJEVFDMw3+uQ21WsNweJ+NaE4fR14VpK1yH0AHnfJvNOAWYM=
-      - secure: GW2sg+40JmorJVw/az9GADDLlpJbMC474CK0nkqyscka7NNyBQAaMQpRXTGT1MMDP1kvJwJcpVClBXFgPeUcgecPrQLWGOwuEZ469GT2L9r7Q6dFZJTPNqpPXMyyMFz8Y4ic4ApMs1mgcgBEjem84hqJYt5ZldS5/dLd6ULma2TpNi2IlWLsT14/rWnrc8oPpWA8DtXLA545KbVr7bNpG/xUCSU7o7iLUp3MELYw3BoprZDPypZ0T3xYatSUhjx63K8ipmJKZhPvSecUkP4VgFi+o+FeFJIh+g4x19sExHU1zZgbAEy5YluifHNMpuarevESGTbVlskXPImFZVHwz/Txn3eQXbbRjk8OWM+hc2H10Exh+t8WNolcbfG/NjlwgBxonvNNwlUWNrrXZ5ULYGGnx1sQkGsBDhE7VdpnisKDKlSvfgWVpJKvmYN2FoNO5D2cUdU6MVCVmIX0n1EY2TgPMH/1C64zmPEnTBMuL3Gcfyv/dtW1RhDXsVB6W/df4yhXR9Sf1uYCpuspVcfUpQxNEcDT3PIje499ZUMbFd63iltQNUtY1r+1Id7gMsobLhjx4SUfSI/L2suI8QLVfo16VZBoJIvP06PV48I6NNCM0cjNn5HbdH9sEAt2sivN3E7OoCw6b+g54hUJxqlIdsjIbFkO1USVuShmW18zsgs=
+     echo "Running release"
+     mvn --settings travis/settings.xml deploy -Prelease -DskipTests=true
+  fi
 notifications:
-   slack:
-      secure: NUMs/SN5ZsR/IVcwUiOPJXrvHbSUmt1fgr2Qw0ULFqhJy+OLsdBdQnCX5xpXfULKvaVw32i5njUWY4kbyOdjDIf7plQBt7zJoSYK9LUQTQHD+0YArreY2rFddnsA+F1ruNZd45t/FSA5nSEP/alVuwE8V6/Q2FFskhepEwXS2CWx6W3ww4DnSHHuRwydzVm0rB9t1b275Y/Nh1r/EBdUOyFcaV5ttAZoOgMBoeXD/aHjATXTqJJIw8JnmTruX3uFTvvu4Ti4OiqyexqBopvsD63wMCZ7gAB8NoJmP1YTZI4afA/RaPlqCo8YrHjeC0qy7iDxdI7QX6a0+bEL7naw/Sj0hZN4sSQevfvDd/JT90rtcK8yPb9WWUXkY2ByKE7Ls31uvbbWUeZZZwOdDgToYAWaH6RntX0ayTPNpvZdU05Zh0SGOaTWLxgp+uYfitB/G4o0V7b9f/boNhBBuizCSwn8KvYYE5RznxNk6vh86+JQnlrT+/S2Lthe3lIkYPtaGf4z4TxarzioCblchQqJChr7Ki8CzntwvHPpXKsmy9YDkV77mjvnWG5zDbafyUg17W2fC6MlXfMLhuHhJwXje77F5C4GwuhvttY+3QWaLx+r4qlE94gXW4on9JYXaIxeHyCunYL6+V4vGol4Wd2QIvB+H82FYfAWe+Mk/iO2Tvk=
+  slack:
+    secure: NUMs/SN5ZsR/IVcwUiOPJXrvHbSUmt1fgr2Qw0ULFqhJy+OLsdBdQnCX5xpXfULKvaVw32i5njUWY4kbyOdjDIf7plQBt7zJoSYK9LUQTQHD+0YArreY2rFddnsA+F1ruNZd45t/FSA5nSEP/alVuwE8V6/Q2FFskhepEwXS2CWx6W3ww4DnSHHuRwydzVm0rB9t1b275Y/Nh1r/EBdUOyFcaV5ttAZoOgMBoeXD/aHjATXTqJJIw8JnmTruX3uFTvvu4Ti4OiqyexqBopvsD63wMCZ7gAB8NoJmP1YTZI4afA/RaPlqCo8YrHjeC0qy7iDxdI7QX6a0+bEL7naw/Sj0hZN4sSQevfvDd/JT90rtcK8yPb9WWUXkY2ByKE7Ls31uvbbWUeZZZwOdDgToYAWaH6RntX0ayTPNpvZdU05Zh0SGOaTWLxgp+uYfitB/G4o0V7b9f/boNhBBuizCSwn8KvYYE5RznxNk6vh86+JQnlrT+/S2Lthe3lIkYPtaGf4z4TxarzioCblchQqJChr7Ki8CzntwvHPpXKsmy9YDkV77mjvnWG5zDbafyUg17W2fC6MlXfMLhuHhJwXje77F5C4GwuhvttY+3QWaLx+r4qlE94gXW4on9JYXaIxeHyCunYL6+V4vGol4Wd2QIvB+H82FYfAWe+Mk/iO2Tvk=
+env:
+  global:
+  - OSSRH_JIRA_USERNAME=navikt
+  - secure: Z2eXCCcnUXGbHICA4PEDcI+/3U/kmV9nQZn+/ug847KgovlxetSIEXulTFplCtugPaohUaeVE06oRI9mFG8zh+vqXfdhayTTG4yu6CZVyeQN03iEsd5hvr2NOdD8Xr/t6289K7zoB7nybB314xwrX6H8o89/ijSxJqNwnJP+t/yARhPeSC7jfag0kLBc1FYsiLGGtqvMqIZvQDFnSnM63XO8aieCOrv2f9o7sbb6L/9KQJ9nNBDrIP1RKd8oRaBdRsvYcIc1bmtXwTQA+P7yQ0pWv4zTDsGTsmeSnWRVNUTmFx+v2X5nOG3bWL6vXUaW1v7flyTFtQSTXGNsKmhMMaKUi6makpHQPCmlLDUHUPaGG/ZCzvUEL3oHod2znh0kmfK/ZUm8TMsSCe6884seNHgBM40bnFi9yFnc0QOmoA5t+UD8/xFryLPZeJQRvQ7qDf8U+C9I1SSVu8Ef9rELt3XWWWcdSOgY+xEKpom8tC6SdnczCG1Ct1CrlFjPmQSxTfLh7qdLDK2WWkM8i7AybVF3yhG4s0HSXMj9TjsnxLpMrI+B5yA/c6T5Hm4x8LsyIMQceS61tf/FymbjxulR6NIHeQOisBNv/Xuziog6GBOBktRXTu6GlHiEHbegRsCfkPIwK70Ro4gFks8tsuWZF5bYYWGfhiGcJcMr2hM2lck=
+  - GPG_KEY_NAME=navikt
+  - secure: kLhOCEbjs4EmRtcBGcqKpM1wPWzIJgII7s9h6lJdFwB2jjiRXQi83IbbylD1dOtv4zWZ4VXLh4QgiR50NZ96MduszImGaYIJZ//1m41Le9DU14+QY63b2IEhMdFzsfg1yV6UKm8A2MggiPIjhfr45mgjTr0lAF8buYQdbMLPVE8d9GW9UErhBft3oJUBWctRkR3730gFYWjTShzEYGU297WxmacuM8y+k9he/V6GcuRo/wEBFx3iKf/oRehtqs/MNiykBUL+rGNHUXG00b37rnczcSgdb76Pfu2VOxgI0xXqwK8zEaKmZSrLyftWlYTV6WYlxEG+WXs9OioYOtdSRUgEpuaWq7rkPliKcDhHlSKH+4eNpuhoWjllvOCaDapouCOifhAZVq4G2FCJJjHIHKgQmYj3DXINJrJpZ4VUDSEu8xTcZ4C1GDPh9AM4XubrETE/fBp8Xyb52jRn1xRzMPFUs4Oq2yUvzAF6djUWlwQLMCPC569qCtosAU7ODy7uGTLI9ueTSGvB8Yn48shzOn750Cxk63hbq7l9CsXDOk9RvxDTtLio0rq1wFpJkfdhvdGSs2CdU64Sm0UqSUooP9KGztbteO3gFq8LiyhNFqtcg0lnRu6A/vrbvjOUeWSzWb9BdYEMZD3Cmj601mdAMKaw77DygdUZ+AEpa9b4+NM=
+  - secure: dlmkPdh0bmwaIUw9lysee4MTWxh6+/40BQQrMy0ZS2+PPuWtLkmavwMIT3vPdRnsOcNp4vnDmsSohhFEci0Y32+rtxHh0w8N9fB25ac/ERBeXOUM3i2NsRef6JFgg2sASp7EJ7YnWQZ8V1/Lp7diiaXCPa7QkxR532e9eZ6168Geb+aag6fUt6s/GolphZ+actnQKkiQk44YM7dLPU50g8si/RlVgoLqPqL2ujaWiV36jBqAv4EfLLE9t48+7kLrmnYOWaaoeauilwze/QYbNoKJGuGmYy9i2K/edHXsRHsKYm2SqSnqtpSY2WPsfXGbo8fl2fhwC/4Nn4xgcTh9CmtxWh/FqaB/c+99yWa2JOYQxi5KV4VCzdMl4WyrKL/e2v3Sh8EBQel+W4Re1p4Njy0ad0gW1AXPD/KtHvj/vID+xhRY5+i0EAphgxzCOyuEza1VPVQr1qPRbQ0TX1jQGyqYDxXRczYK4wbfYhrEpv8653P8f03UDbRLu+8DfSXzVWu6FnAyYdizmQzbUjS9pxzjQfp8I32WE+FbBGZV97yn0esaUyQ9uLTvMSJo/fm7bVj2/IKHLpfsm3GjmnT54msMY3akqfpcs+CKg/zUwUtkejx0sV2Jws0WSyHiG1z1kc7E8ZCYNCXfBycpgv3rXW5e5Pl/l/GSmVbCIXvip78=

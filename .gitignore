@@ -54,3 +54,4 @@ nb-configuration.xml
 
 # Misc
 *.swp
+target/
