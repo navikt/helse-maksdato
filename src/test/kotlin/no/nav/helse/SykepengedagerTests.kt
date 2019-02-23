@@ -22,8 +22,10 @@ object SykepengedagerTests: Spek({
                      Tidsperiode(LocalDate.of(2018, 1, 1), LocalDate.of(2018, 2, 28))
                   )
                )
-               val expected = LocalDate.of(2019, 12, 26)
-               maksdato(grunnlag) `should equal` expected
+               val expectedDato = LocalDate.of(2019, 12, 26)
+               val actual = maksdato(grunnlag)
+               actual.dato `should equal` expectedDato
+               actual.begrunnelse `should match` "^§ 8-12.*248.*0.*$"
             }
          }
 
@@ -36,8 +38,10 @@ object SykepengedagerTests: Spek({
                   ARBEIDSTAKER,
                   emptyList()
                )
-               val expected = LocalDate.of(2019, 12, 26)
-               maksdato(grunnlag) `should equal` expected
+               val expectedDato = LocalDate.of(2019, 12, 26)
+               val actual = maksdato(grunnlag)
+               actual.dato `should equal` expectedDato
+               actual.begrunnelse `should match` "^§ 8-12.*248.*0.*$"
             }
          }
 
@@ -53,8 +57,10 @@ object SykepengedagerTests: Spek({
                      Tidsperiode(LocalDate.of(2018, 3, 1), LocalDate.of(2018, 4, 30))
                   )
                )
-               val expected = LocalDate.of(2019, 10, 25)
-               maksdato(grunnlag) `should equal` expected
+               val expectedDato = LocalDate.of(2019, 10, 25)
+               val actual = maksdato(grunnlag)
+               actual.dato `should equal` expectedDato
+               actual.begrunnelse `should match` "^§ 8-12.*248.*44.*$"
             }
          }
 
@@ -70,8 +76,10 @@ object SykepengedagerTests: Spek({
                      Tidsperiode(LocalDate.of(2017, 10, 1), LocalDate.of(2018, 1, 30))
                   )
                )
-               val expected = LocalDate.of(2019, 12, 25)
-               maksdato(grunnlag) `should equal` expected
+               val expectedDato = LocalDate.of(2019, 12, 25)
+               val actual = maksdato(grunnlag)
+               actual.dato `should equal` expectedDato
+               actual.begrunnelse `should match` "^§ 8-12.*248.*1.*$"
             }
          }
 
@@ -92,8 +100,10 @@ object SykepengedagerTests: Spek({
                      Tidsperiode(LocalDate.of(2015, 5, 30), LocalDate.of(2016, 1, 1))
                   )
                )
-               val expected = LocalDate.of(2019, 7, 3)
-               maksdato(grunnlag) `should equal` expected
+               val expectedDato = LocalDate.of(2019, 7, 3)
+               val actual = maksdato(grunnlag)
+               actual.dato `should equal` expectedDato
+               actual.begrunnelse `should match` "^§ 8-12.*248.*126.*$"
             }
          }
       }
@@ -104,7 +114,7 @@ object SykepengedagerTests: Spek({
 
       given("a person's age and occupasional status") {
          on("person between 67 and 70 years old") {
-            it("is 60 days regardless of yrkesstatus") {
+            it("gets 60 days regardless of yrkesstatus") {
                (67..70).forEach { age ->
                   maxTilgjengeligeDager(age, ARBEIDSTAKER) `should equal` 60
                }
@@ -112,7 +122,7 @@ object SykepengedagerTests: Spek({
          }
 
          on("working person less than 67 years old") {
-            it("is 250 days") {
+            it("gets 250 days") {
                maxTilgjengeligeDager(25, IKKE_I_ARBEID) `should equal` 250
             }
          }

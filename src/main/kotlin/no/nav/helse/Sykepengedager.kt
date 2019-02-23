@@ -4,15 +4,20 @@ import no.nav.helse.Yrkesstatus.*
 import java.time.*
 import java.time.temporal.ChronoUnit.*
 
-fun maksdato(grunnlag: Grunnlagsdata): LocalDate {
-   val dagerTilgode = dagerTilgode(grunnlag)
-   return nWeekdaysFrom(dagerTilgode - 1, grunnlag.førsteSykepengedag)
+fun maksdato(grunnlag: Grunnlagsdata): MaksdatoResult {
+   val (antallDagerTilgode, hvorfor) = dagerTilgode(grunnlag)
+   val datoen = nWeekdaysFrom(antallDagerTilgode - 1, grunnlag.førsteSykepengedag)
+   val begrunnelsen = "§ 8-12: $hvorfor"
+   return MaksdatoResult(datoen, begrunnelsen)
 }
 
-fun dagerTilgode(grunnlag: Grunnlagsdata): Int {
+fun dagerTilgode(grunnlag: Grunnlagsdata): Pair<Int, String> {
    val maxTilgjengeligeDager = maxTilgjengeligeDager(grunnlag.personensAlder, grunnlag.yrkesstatus)
-   val dagerForbrukt = dagerForbrukt(grunnlag.førsteFraværsdag, grunnlag.tidligerePerioder)
-   return if (dagerForbrukt > maxTilgjengeligeDager) 0 else maxTilgjengeligeDager - dagerForbrukt
+   val forbrukt = dagerForbrukt(grunnlag.førsteFraværsdag, grunnlag.tidligerePerioder)
+   val tilgode = if (forbrukt >= maxTilgjengeligeDager) 0 else maxTilgjengeligeDager - forbrukt
+   val begrunnelse = "${grunnlag.yrkesstatus} på ${grunnlag.personensAlder} år gir maks $maxTilgjengeligeDager dager. " +
+      "$forbrukt av disse er forbrukt"
+   return Pair(tilgode, begrunnelse)
 }
 
 internal fun maxTilgjengeligeDager(personensAlder: Int, yrkesstatus: Yrkesstatus) =
