@@ -13,7 +13,7 @@ fun maksdato(grunnlag: Grunnlagsdata): MaksdatoResult {
 
 fun dagerTilgode(grunnlag: Grunnlagsdata): Pair<Int, String> {
    val maxTilgjengeligeDager = maxTilgjengeligeDager(grunnlag.personensAlder, grunnlag.yrkesstatus)
-   val forbrukt = dagerForbrukt(grunnlag.førsteFraværsdag, grunnlag.tidligerePerioder)
+   val forbrukt = dagerForbrukt(grunnlag.førsteFraværsdag, grunnlag.tidligerePerioder.sortedByDescending { it.tom })
    val tilgode = if (forbrukt >= maxTilgjengeligeDager) 0 else maxTilgjengeligeDager - forbrukt
    val begrunnelse = "${grunnlag.yrkesstatus} på ${grunnlag.personensAlder} år gir maks $maxTilgjengeligeDager dager. " +
       "$forbrukt av disse er forbrukt"
