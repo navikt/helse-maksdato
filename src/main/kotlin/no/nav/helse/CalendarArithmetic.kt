@@ -11,14 +11,22 @@ tailrec fun nWeekdaysFrom(n: Int, from: LocalDate): LocalDate =
    }
 
 
-tailrec fun nextWeekday(after: LocalDate): LocalDate {
-   val nextDay = after.plusDays(1)
-   return if (isWeekend(nextDay)) nextWeekday(nextDay) else nextDay
+fun nextWeekday(date: LocalDate): LocalDate {
+   val daysToAdd: Long = when (date.dayOfWeek) {
+      FRIDAY -> 3
+      SATURDAY -> 2
+      else -> 1
+   }
+   return date.plusDays(daysToAdd)
 }
 
-tailrec fun previousWeekday(after: LocalDate): LocalDate {
-   val previousDay = after.minusDays(1)
-   return if (isWeekend(previousDay)) previousWeekday(previousDay) else previousDay
+fun previousWeekday(date: LocalDate): LocalDate {
+   val daysToExtract: Long = when (date.dayOfWeek) {
+      MONDAY -> 3
+      SUNDAY -> 2
+      else -> 1
+   }
+   return date.minusDays(daysToExtract)
 }
 
 fun isWeekend(date: LocalDate): Boolean =
