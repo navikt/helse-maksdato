@@ -29,10 +29,12 @@ object CalendarArithmeticTest: Spek({
          }
 
          on ("any day of the week") {
-            it("is calculates a date x amount of weekdays into the future") {
+            it("is calculates a date x amount of weekdays into the future or back to the past") {
                val testcases = mapOf(
                   Pair(LocalDate.of(2015, 11, 26), 2) to LocalDate.of(2015, 11, 30),
-                  Pair(LocalDate.of(2019, 1, 4), 3) to LocalDate.of(2019, 1, 9)
+                  Pair(LocalDate.of(2015, 11, 30), -2) to LocalDate.of(2015, 11, 26),
+                  Pair(LocalDate.of(2019, 1, 4), 3) to LocalDate.of(2019, 1, 9),
+                  Pair(LocalDate.of(2019, 1, 9), -3) to LocalDate.of(2019, 1, 4)
                )
 
                testcases.forEach {
