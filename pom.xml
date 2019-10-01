@@ -55,7 +55,7 @@
       <dependency>
          <groupId>org.amshove.kluent</groupId>
          <artifactId>kluent</artifactId>
-         <version>1.54</version>
+         <version>1.56</version>
          <scope>test</scope>
       </dependency>
       <dependency>
